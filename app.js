@@ -3,6 +3,24 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
+ var expressValidator = require('express-validator');
+ var flash = require('express-flash');
+ var session = require('express-session');
+ var bodyParser = require('body-parser');
+ require('dotenv').config()
+const mongoose = require('mongoose');
+mongoose.Promise = global.Promise;
+
+mongoose.connect(process.env.MONGODB_URL, {
+    useNewUrlParser: true
+}).then(() => {
+    console.log("Successfully connected to the database");    
+}).catch(err => {
+    console.log('Could not connect to the database. Error...', err);
+    process.exit();
+});
+
+
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -18,6 +36,14 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+
+
+ app.use(session({ 
+     secret: process.env.SESSION_SECRET,
+     resave: false,
+     saveUninitialized: true,
+     cookie: { maxAge: 6000000 }
+ }))
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
@@ -36,6 +62,11 @@ app.use(function(err, req, res, next) {
   // render the error page
   res.status(err.status || 500);
   res.render('error');
+});
+
+// port must be set to 3000 because incoming http requests are routed from port 80 to port 8080
+app.listen(process.env.SERVER_PORT, function () {
+    console.log(`Node app is running on port ${process.env.SERVER_PORT}`);
 });
 
 module.exports = app;
